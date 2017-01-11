@@ -43,13 +43,13 @@ block content
 
             h2#Send snd[writer;data]
             p.
-                Send particular data to a given writer cursor. Returns nil if OK.
+                <b>snd</b> sends particular data to a given writer cursor. Returns nil if OK.
             code.
                 o) snd[p;42]
 
             h2#Receive rcv[reader]
             p.
-                Returns data from the given reader cursor. If none then yields to scheduler for another task.
+                <b>rcv</b> returns data from the given reader cursor. If none then yields to scheduler for another task.
             code.
                 o) rcv[s]
 
