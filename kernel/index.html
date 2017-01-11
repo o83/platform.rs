@@ -1,23 +1,40 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="/main.css"><title>Kernel</title></head><body class="content"><header class="header"><a href="/"><img class="header__logo" src="/index.png"/></a><div class="header__titles"><h1 class="header__title">The Kernel</h1><h4 class="header__subtitle">O Language, AMP Scheduler, CAS Queues, CPS Tasks</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">Features</h1><div class="type"><ol class="type__col"><h3>CURRENT</h3><li><a href="#Network I/O for Linux/BSD">NETWORK I/O FOR LINUX/BSD</a></li><li><a href="#Disk I/O">DISK I/O</a></li><li><a href="#Reactors and Tasks">REACTORS AND TASKS</a></li><li><a href="#MPSC and SPMC CAS multicursor queues">MPSC AND SPMC CAS MULTICURSOR QUEUES</a></li></ol><ol class="type__col"><h3>PLANNED</h3><li><a href="#Transactional Log">TRANSACTIONAL LOG</a></li><li><a href="#Persistent BTree-flavour">PERSISTENT BTREE-FLAVOUR</a></li><li><a href="#Pluggable Application Protocols">PLUGGABLE APPLICATION PROTOCOLS</a></li></ol></div></div><div class="intro"><h2 id="fpga">Autobalancing</h2><p>The server should effectively use multicore configurations with respect to cache locality, avoid cache invalidations and provide effective balancing of prescheduled task/timer priorities with variative operational low-latency feedback.
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="/main.css"><title>Kernel</title></head><body class="content"><header class="header"><a href="/"><img class="header__logo" src="/index.png"/></a><div class="header__titles"><h1 class="header__title">The Kernel</h1><h4 class="header__subtitle">O Language, AMP Scheduler, CAS Queues, CPS Tasks</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">Features</h1><div class="type"><ol class="type__col"><h3>CURRENT</h3><li><a href="#Network I/O for Linux/BSD">NETWORK I/O FOR LINUX/BSD</a></li><li><a href="#Disk I/O">DISK I/O</a></li><li><a href="#Reactors and Tasks">REACTORS AND TASKS</a></li><li><a href="#MPSC and SPMC CAS multicursor queues">MPSC AND SPMC CAS MULTICURSOR QUEUES</a></li></ol><ol class="type__col"><h3>PLANNED</h3><li><a href="#Transactional Log">TRANSACTIONAL LOG</a></li><li><a href="#Persistent BTree-flavour">PERSISTENT BTREE-FLAVOUR</a></li><li><a href="#Pluggable Application Protocols">PLUGGABLE APPLICATION PROTOCOLS</a></li></ol></div></div><div class="intro"><h2 id="fpga">Asymmetric Multiprocessing</h2><p>The Kernel uses AMP approach for schedulers setup. It has dedicated core for Console and WebSocket maintanance channels,
+dedicated IO cpu cores for data transfer and other cores for task processing. You may statically bind range of tasks
+to specific cores, completely avoiding cpu context switching in runtime. The Kernel comes with configuration language
+where you specify cpu-task affinity during boot.
 
 <img src="http://5ht.co/img/candy.png" width="100%">
-</p><h2 id="fpga">Low-latency</h2><p>To avoid context switching the bootstrap configuration should permanently preset the different types of reactor per core affinity. All tasks or reactors should strive to use limited range of addresses (L1/L2 size when possible) for data cache saturation.
-</p><h2 id="other">Multicursor</h2><p>The heart of the zero-copy low-latency transport system is the continuous preallocated ring of continuous ring buffers (called sectors). By the direction there are multi-reader cursor and multi-writer cursor, selecting the direction of data flow.
+</p><h2 id="fpga">Low-latency</h2><p>All tasks or reactors should strive to use limited range
+of addresses (L1/L2 size when possible) for data cache saturation.
+To avoid cache collision betweem core threads the Kernel could be
+configured to parallel processing non-intersected adress ranges.
+</p><h2 id="other">Multicursor</h2><p>The heart of the zero-copy low-latency transport system is the set of continuous preallocated
+ring buffers (called sectors). By the direction there are multi-reader cursor and multi-writer cursor,
+selecting the direction of data flow.
 
 <img src="http://5ht.co/img/pub.png" width="100%">
 
-One can specify than cursors sould not intersect or be beyond limits of predefined sectors. That is how we allow to provide mutiple acces for several consumers without actual copying the message and using only CAS cursor shifting.
+One can specify than cursors sould not intersect or be beyond limits of predefined sectors.
+That is how we allow to provide mutiple acces for several consumers without actual copying
+the message and using only CAS cursor shifting.
 
 <img src="http://5ht.co/img/sub.png" width="100%">
-</p><h2 id="mltt">Ractors</h2><p>Each CPU core can run one of three type of reactors that run Task, Timer and IO loopers. There is priority queues for Task reactor and interval trees of Timer reactor.
+</p><h2 id="mltt">Ractors</h2><p>Each CPU core can run one of three type of reactors that run Task, Timer and IO loopers.
+There is priority queues for Task reactor and interval trees of Timer reactor.
 
 <img src="http://5ht.co/img/sys.png" width="100%">
 
-The common way to interact between tasks is to use queues that is implemented as circular buffers with CAS cursors. But it is also possible to direct communitation with any given reactor by sending InterCore Bus system messages. Such messages are spawn and timer events. You can extend InterCore bus protocol to send reactor-wide events applying custom filters to schedulable streams.
-</p><h2 id="fpga">IO Reactor</h2><p>Network server is an IO reactor that can handle multiple connections and based on Linux/BSD/Windows polling flavours.
+The common way to interact between tasks is to use queues that is implemented as circular
+buffers with CAS cursors. But it is also possible to direct communitation with any given
+reactor by sending InterCore Bus system messages. Such messages are spawn and timer events.
+You can extend InterCore bus protocol to send reactor-wide events applying custom filters
+to schedulable streams.
+</p><h2 id="fpga">IO Reactor</h2><p>Network server is an IO reactor that can handle multiple connections and based
+on Linux/BSD/Windows polling flavours.
 
 <img src="http://5ht.co/img/net.png" width="100%">
-</p><h2 id="fpga">Timer Reactor</h2><p>Different types of schedulable entities like Timers, Tasks and IO events has different type of selectors that provides prescheduled selection of poll-able sequence.
+</p><h2 id="fpga">Timer Reactor</h2><p>Different types of schedulable entities like Timers, Tasks and IO events has
+different type of selectors that provides prescheduled selection of poll-able sequence.
 
 <img src="http://5ht.co/img/dis.png" width="100%">
 </p><h2 id="fpga">Task Reactor</h2><p>Task reaactor is able to run Rust and O-CPS Tasks.
