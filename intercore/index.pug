@@ -24,19 +24,20 @@ block content
         .intro
             h2#Publisher pub [capacity]
             p.
-                <b>pub</b> creates new publisher CAS cursor for writers. Returns system-wide cursor Id.
+                <b>pub</b> creates new publisher CAS cursor for writing. Returns system-wide cursor Id.
             code.
                 o) p: pub[16]
 
             h2#Subscriber sub [publisher]
             p.
-                <b>sub</b> created new subscriber CAS cursor based on given writer cursor. Return system-wide cursor Id.
+                <b>sub</b> created new subscriber CAS cursor based on given writer cursor. Return system-wide cursor Id for reading.
             code.
                 o) s: sub[p]
 
             h2#Spawn spawn[core;program;cursors]
             p.
-                <b>sub</b> created new subscriber CAS cursor based on given writer cursor. Return system-wide cursor Id.
+                <b>spawn</b> created new Task on a given core. The Task could be O program or any LLVM code with compatible FFI.
+                Also you should specify the ownership list of cursors that are exclusively available to that Task.
             code.
                 o) spawn[0;"etc/proc0";(0;1)]
 
