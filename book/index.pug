@@ -10,7 +10,7 @@ block content
             h1#taxonomy API
             -
                 var types = {
-                        'Memory': ['Pub','Sub','Cursor','Ring','Channel'],
+                        'Memory': ['Pub','Sub','Cursor','Ring','Chan'],
                         'Processor': ['Task','CpsTask','Timer','Core','Hub','Host','IO'],
                     }
 
@@ -58,7 +58,7 @@ block content
                     cursors: UncheckedUnsafeArc<Vec<Cursor>>,
                 }
 
-            h2#Channel Channel
+            h2#Chan Channel
             code.
                 pub struct Channel {
                     publisher: Publisher&lt;Message>,
