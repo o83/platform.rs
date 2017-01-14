@@ -51,14 +51,17 @@ block content
 
             h2#Sub Subscriber
             code.
-                pub struct Subscriber<T> {
-                    ring: Arc<RingBuffer<T>>,
+                pub struct Subscriber&lt;T> {
+                    ring: Arc&lt;RingBuffer&lt;T>>,
                     token: usize,
-                    next: Cell<Sequence>,
-                    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+                    next: Cell&lt;Sequence>,
+                    cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
                 }
 
             h2#Chan Channel
+            p.
+                The Channel represents a InterCore node component.
+                With one writer cursor and multiple readers equals to number of cores.
             code.
                 pub struct Channel {
                     publisher: Publisher&lt;Message>,
@@ -66,11 +69,27 @@ block content
                 }
 
             h2#Core Core
+            p.
+                The Core represents a Task Reactor type with InterCore bus and own scheduler.
+                By default InterCore task is spawned during creation.
+                You can spawn CPS and Rust tasks on Core reactor.
             code.
                 pub struct Core'a> {
                     scheduler: Scheduler&lt;'a, Job'a>>,
                     bus: UnsafeCell&lt;Channel>,
+                    id: usize,
+                }
+
+            h2#Hub Hub
+            p.
+                The Hub represents a type of boot core which hash several
+                select poll system devices such as WebSocket, Console and
+                InterCore bus selectors along with own CPS Task Reactor.
+            code.
+                pub struct Hub&lt;'a> {
                     io: IO,
+                    scheduler: Scheduler&lt;'a, CpsTask&lt;'a>>,
+                    ctx: Rc&lt;Ctx>,
                 }
 
             h2#Scheduler Scheduler

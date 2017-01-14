@@ -14,20 +14,30 @@ Cores which are binded to cpus and run the task scheduler loops.</p><p>The entir
     next: Cell&lt;Sequence>,
     cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
 }
-</code><h2 id="Sub">Subscriber</h2><code>pub struct Subscriber<T> {
-    ring: Arc<RingBuffer<T>>,
+</code><h2 id="Sub">Subscriber</h2><code>pub struct Subscriber&lt;T> {
+    ring: Arc&lt;RingBuffer&lt;T>>,
     token: usize,
-    next: Cell<Sequence>,
-    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+    next: Cell&lt;Sequence>,
+    cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
 }
-</code><h2 id="Chan">Channel</h2><code>pub struct Channel {
+</code><h2 id="Chan">Channel</h2><p>The Channel represents a InterCore node component.
+With one writer cursor and multiple readers equals to number of cores.</p><code>pub struct Channel {
     publisher: Publisher&lt;Message>,
     subscribers: Vec&lt;Subscriber&lt;Message>>,
 }
-</code><h2 id="Core">Core</h2><code>pub struct Core'a> {
+</code><h2 id="Core">Core</h2><p>The Core represents a Task Reactor type with InterCore bus and own scheduler.
+By default InterCore task is spawned during creation.
+You can spawn CPS and Rust tasks on Core reactor.</p><code>pub struct Core'a> {
     scheduler: Scheduler&lt;'a, Job'a>>,
     bus: UnsafeCell&lt;Channel>,
+    id: usize,
+}
+</code><h2 id="Hub">Hub</h2><p>The Hub represents a type of boot core which hash several
+select poll system devices such as WebSocket, Console and
+InterCore bus selectors along with own CPS Task Reactor.</p><code>pub struct Hub&lt;'a> {
     io: IO,
+    scheduler: Scheduler&lt;'a, CpsTask&lt;'a>>,
+    ctx: Rc&lt;Ctx>,
 }
 </code><h2 id="Scheduler">Scheduler</h2><code>pub struct Scheduler&lt;'a, T: 'a> {
     tasks: Vec&lt;(T, TaskTermination)>,
