@@ -29,9 +29,9 @@ block content
                 represented as ring buffers of memory slices;
                 and Tasks, cpu processing atomic ports. Queues could be two types: Publisher,
                 who holds writer cursors; and Subscriber, who holds reader cursors.
-                Tasks represented as Rust LLVM task and CPS interpreter tasks.
+                Tasks represented as Rust LLVM tasks and/or CPS interpreter tasks.
                 There is two special tasks: InterCore task spawned at any enabled cores;
-                and CPS interpreter task of The Kernel Maintanance Shell is spawned at junk core, which
+                and CPS interpreter task of The Kernel Maintanance Shell is spawned at boot core, which
                 also runs Console and WebSocket system IO. During system lifetime
                 different CPS and Rust tasks could be spawned.
             p.
