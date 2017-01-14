@@ -10,8 +10,8 @@ block content
             h1#taxonomy API
             -
                 var types = {
-                        'Queues': ['Publisher','Subscriber','Cursor','RingBuffer','Channel'],
-                        'Processes': ['Task','CpsTask','Timer','Core','Hub','Host','IO'],
+                        'Memory': ['Pub','Sub','Cursor','Ring','Channel'],
+                        'Processor': ['Task','CpsTask','Timer','Core','Hub','Host','IO'],
                     }
 
             .type
@@ -41,7 +41,7 @@ block content
             p.
                 The entire Virtual Machine is a set of Cores.
 
-            h2#Publisher Publisher
+            h2#Pub Publisher
             code.
                 pub struct Publisher&lt;T> {
                     ring: Arc&lt;RingBuffer&lt;T>>,
@@ -49,7 +49,7 @@ block content
                     cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
                 }
 
-            h2#Subscriber Subscriber
+            h2#Sub Subscriber
             code.
                 pub struct Subscriber<T> {
                     ring: Arc<RingBuffer<T>>,
