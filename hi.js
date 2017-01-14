@@ -2,9 +2,9 @@ function highlight() {
     var code = document.getElementsByTagName('code');
     for (var i = 0; i < code.length; i++) {
         code[i].innerHTML = code[i].innerHTML
-            .replace(/([(){}→∀λ,=]+|::=|:=)/g,
+            .replace(/([(){}→∀λ,=]+|::=|:=<>)/g,
                 '<span class="h__symbol">$1</span>')
-            .replace(/\b(pub|sub|$|rcv|spawn|snd)\b(?!:)/g,
+            .replace(/\b(pub|sub|$|rcv|spawn|snd|struct|enum|Vec|Arc|Rc|usize|u64|u32|Option|UnsafeCell|Cell|UncheckedUnsafeArc)\b(?!:)/g,
                 '<span class="h__keyword">$1</span>');
     }
 }

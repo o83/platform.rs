@@ -1,7 +1,7 @@
 {
-  "name": "groupoid",
+  "name": "kernel",
   "version": "1.0.0",
-  "description": "Groupoid Infinity is doing research in type theory, term encodings, program extraction and effective compilation. Infinity stack consists of two tools:",
+  "description": "Stream Processing and Kernel Platform",
   "main": "",
   "scripts": {
     "start": "node-sass ./styles -o ./ && pug ./ ",
@@ -9,9 +9,9 @@
   },
   "repository": {
   "type": "git",
-  "url": "git://github.com/groupoid/groupoid.space"
+  "url": "http://platform.rs"
    },
-  "author": "Arseniy Bushyn",
+  "author": "Maxim Sokhatsky",
   "license": "ISC",
   "preinstall": "npm i -g node-sass && npm i -g pug-cli"
 }

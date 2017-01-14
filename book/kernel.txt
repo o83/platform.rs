@@ -1,0 +1,112 @@
+
+The Kernel Overview
+
+The Kernel is an Actor system with two main Actor types:
+Queues, represented as ring buffers of memory slices;
+and Tasks, cpu processing atomic ports. Queues could be two types:
+Publisher, who holds writer cursors; and Subscriber, who holds reader cursors.
+Tasks represented as Rust LLVM task and CPS interpreter tasks.
+There is two special tasks: InterCore task spawned at any enabled cores;
+and CPS interpreter task of The Kernel Maintanance Shell is spawned at junk core, which
+also runs Console and WebSocket system IO. During system lifetime
+different CPS and Rust tasks could be spawned.
+
+Besides Queues and Tasks there is also Timers and other
+system IO tasks such as Network or Files. There are other entities such as
+Cores which are binded to cpus and run the task scheduler loops.
+
+The entire Virtual Machine is a set of Cores.
+
+Queues
+======
+
+Publisher
+---------
+
+pub struct Publisher<T> {
+    ring: Arc<RingBuffer<T>>,
+    next_seq_cache: Cell<Sequence>,
+    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+}
+
+
+Subscriber
+----------
+
+pub struct Subscriber<T> {
+    ring: Arc<RingBuffer<T>>,
+    token: usize,
+    next_seq_cache: Cell<Sequence>,
+    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+}
+
+
+pub struct Channel {
+    publisher: Publisher<u64>,
+    subscribers: Vec<Subscriber<u64>>,
+}
+
+Reactors
+========
+
+Core triple represents
+
+pub struct Core<'a> {
+    scheduler: Scheduler<'a, Job<'a>>,
+    bus: UnsafeCell<Channel>,
+    io: IO,
+}
+
+pub struct Machine<'a> {
+    junk: Handle<Core<'a>>,
+    cores: Vec<Core<'a>>,
+}
+
+pub struct Scheduler<'a, T: 'a> {
+    tasks: Vec<(T, TaskTermination)>,
+    ctxs: Vec<Context<'a>>,
+}
+
+pub enum TaskTermination {
+    Recursive,
+    Corecursive,
+}
+
+pub enum Context<'a> {
+    Cont(usize),
+    Node(&'a AST<'a>),
+    Nil,
+}
+
+pub struct CpsTask<'a> {
+    interpreter: Interpreter<'a>,
+    ast: Option<&'a AST<'a>>,
+}
+
+pub trait Task<'a> {
+    fn init(&'a mut self, input: Option<&'a str>);
+    fn exec(&'a mut self, input: Option<&'a str>);
+    fn poll(&'a mut self, c: Context<'a>) -> Poll<Context<'a>, Error>;
+    fn finalize(&'a mut self);
+}
+
+pub struct IO {
+    tokens: usize,
+    events: Events,
+    poll: Poll,
+    selectors: Vec<Selector>,
+    slots: Vec<usize>,
+    running: bool,
+    i: usize,
+}
+
+pub enum Job<'a> {
+    Cps(CpsTask<'a>),
+    Rust(RustTask<'a>),
+}
+
+pub enum Selector {
+    Ws(WsServer),
+    Rx(Console),
+    Sb(Subscriber<Message>),
+}

@@ -1,6 +1,6 @@
-mixin header(logo, title, subtitle) 
+mixin header(logo, title, subtitle)
     header.header
-        a(href='/')
+        a(href='http://platform.rs/')
             img.header__logo(src=logo)
         .header__titles
             h1.header__title!= title
@@ -20,13 +20,13 @@ html
         meta(property='fb:app_id' content='118554188236439')
         meta(property='og:url' content='http://platform.rs' )
         meta(property='og:description' content='The Platform')
-        link(rel='stylesheet' href='/main.css')
+        link(rel='stylesheet' href='http://platform.rs/main.css')
         block title
             title default
 
     body.content
         block content
         footer.footer
-            img.footer__logo(src='/stamp.svg')
+            img.footer__logo(src='http://platform.rs/stamp.svg')
             span.footer__copy 2016&mdash;2017 &copy; Tachyonic
-        script(src='/hi.js?v=1')
+        script(src='http://platform.rs/hi.js?v=2')
