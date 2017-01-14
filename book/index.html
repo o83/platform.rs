@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="http://platform.rs/main.css"><title>Book</title></head><body class="content"><header class="header"><a href="http://platform.rs/"><img class="header__logo" src="http://platform.rs/index.png"/></a><div class="header__titles"><h1 class="header__title">The Book</h1><h4 class="header__subtitle">A Guide to The Kernel Structures</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">API</h1><div class="type"><ol class="type__col"><h3></h3><li><a href="#Task">TASK</a></li><li><a href="#CPS">CPS</a></li><li><a href="#Timer">TIMER</a></li><li><a href="#Core">CORE</a></li><li><a href="#Hub">HUB</a></li><li><a href="#Host">HOST</a></li><li><a href="#IO">IO</a></li></ol></div></div><div class="intro"><h2>The Book</h2><p>The Kernel is an Actor system with two main Actor types: Queues,
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="http://platform.rs/main.css"><title>Book</title></head><body class="content"><header class="header"><a href="http://platform.rs/"><img class="header__logo" src="http://platform.rs/index.png"/></a><div class="header__titles"><h1 class="header__title">The Book</h1><h4 class="header__subtitle">A Guide to The Kernel Structures</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">API</h1><div class="type"><ol class="type__col"><h3>QUEUES</h3><li><a href="#Publisher">PUBLISHER</a></li><li><a href="#Subscriber">SUBSCRIBER</a></li><li><a href="#Cursor">CURSOR</a></li><li><a href="#RingBuffer">RINGBUFFER</a></li><li><a href="#Channel">CHANNEL</a></li></ol><ol class="type__col"><h3>PROCESSES</h3><li><a href="#Task">TASK</a></li><li><a href="#CpsTask">CPSTASK</a></li><li><a href="#Timer">TIMER</a></li><li><a href="#Core">CORE</a></li><li><a href="#Hub">HUB</a></li><li><a href="#Host">HOST</a></li><li><a href="#IO">IO</a></li></ol></div></div><div class="intro"><h2>The Book</h2><p>The Kernel is an Actor system with two main Actor types: Queues,
 represented as ring buffers of memory slices;
 and Tasks, cpu processing atomic ports. Queues could be two types: Publisher,
 who holds writer cursors; and Subscriber, who holds reader cursors.
@@ -11,6 +11,45 @@ system IO tasks such as Network or Files. There are other entities such as
 Cores which are binded to cpus and run the task scheduler loops.</p><p>The entire Virtual Machine is a set of Cores.
 </p><h2 id="Publisher">Publisher</h2><code>pub struct Publisher&lt;T> {
     ring: Arc&lt;RingBuffer&lt;T>>,
-    next_seq_cache: Cell&lt;Sequence>,
+    next: Cell&lt;Sequence>,
     cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
-}</code></div></article><footer class="footer"><img class="footer__logo" src="http://platform.rs/stamp.svg"><span class="footer__copy">2016&mdash;2017 &copy; Tachyonic</span></footer><script src="http://platform.rs/hi.js?v=1"></script></body></html>
+}
+</code><h2 id="Subscriber">Subscriber</h2><code>pub struct Subscriber<T> {
+    ring: Arc<RingBuffer<T>>,
+    token: usize,
+    next: Cell<Sequence>,
+    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+}
+</code><h2 id="Channel">Channel</h2><code>pub struct Channel {
+    publisher: Publisher&lt;Message>,
+    subscribers: Vec&lt;Subscriber&lt;Message>>,
+}
+</code><h2 id="Core">Core</h2><code>pub struct Core'a> {
+    scheduler: Scheduler&lt;'a, Job'a>>,
+    bus: UnsafeCell&lt;Channel>,
+    io: IO,
+}
+</code><h2 id="Scheduler">Scheduler</h2><code>pub struct Scheduler&lt;'a, T: 'a> {
+    tasks: Vec&lt;(T, TaskTermination)>,
+    ctxs: Vec&lt;Context&lt;'a>>,
+}
+</code><h2 id="Task">Task</h2><code>pub trait Task&lt;'a> {
+    fn init(&'a mut self, input: Option&lt;&amp;'a str>);
+    fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
+    fn finalize(&'a mut self);
+    fn poll(&'a mut self, c: Context&lt;'a>)
+                               -> PollCtx&lt;'a>, Error>;
+}
+</code><h2 id="IO">IO</h2><code>pub struct IO {
+    tokens: usize,
+    events: Events,
+    poll: Poll,
+    selectors: Vec&lt;Selector>,
+    slots: Vec&lt;usize>,
+    running: bool,
+    i: usize,
+}
+</code><h2 id="CpsTask">CpsTask</h2><code>pub struct CpsTask&lt;'a> {
+    interpreter: Interpreter&lt;'a>,
+    ast: Option&lt;&amp;'a AST&lt;'a>>,
+}</code></div></article><footer class="footer"><img class="footer__logo" src="http://platform.rs/stamp.svg"><span class="footer__copy">2016&mdash;2017 &copy; Tachyonic</span></footer><script src="http://platform.rs/hi.js?v=2"></script></body></html>

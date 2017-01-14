@@ -10,8 +10,8 @@ block content
             h1#taxonomy API
             -
                 var types = {
-                        '': ['Pub','Sub','Cursor','Queue','Channel'],
-                        '': ['Task','CPS','Timer','Core','Hub','Host','IO'],
+                        'Queues': ['Publisher','Subscriber','Cursor','RingBuffer','Channel'],
+                        'Processes': ['Task','CpsTask','Timer','Core','Hub','Host','IO'],
                     }
 
             .type
@@ -45,7 +45,67 @@ block content
             code.
                 pub struct Publisher&lt;T> {
                     ring: Arc&lt;RingBuffer&lt;T>>,
-                    next_seq_cache: Cell&lt;Sequence>,
+                    next: Cell&lt;Sequence>,
                     cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
+                }
+
+            h2#Subscriber Subscriber
+            code.
+                pub struct Subscriber<T> {
+                    ring: Arc<RingBuffer<T>>,
+                    token: usize,
+                    next: Cell<Sequence>,
+                    cursors: UncheckedUnsafeArc<Vec<Cursor>>,
+                }
+
+            h2#Channel Channel
+            code.
+                pub struct Channel {
+                    publisher: Publisher&lt;Message>,
+                    subscribers: Vec&lt;Subscriber&lt;Message>>,
+                }
+
+            h2#Core Core
+            code.
+                pub struct Core'a> {
+                    scheduler: Scheduler&lt;'a, Job'a>>,
+                    bus: UnsafeCell&lt;Channel>,
+                    io: IO,
+                }
+
+            h2#Scheduler Scheduler
+            code.
+                pub struct Scheduler&lt;'a, T: 'a> {
+                    tasks: Vec&lt;(T, TaskTermination)>,
+                    ctxs: Vec&lt;Context&lt;'a>>,
+                }
+
+            h2#Task Task
+            code.
+                pub trait Task&lt;'a> {
+                    fn init(&'a mut self, input: Option&lt;&amp;'a str>);
+                    fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
+                    fn finalize(&'a mut self);
+                    fn poll(&'a mut self, c: Context&lt;'a>)
+                                               -> PollCtx&lt;'a>, Error>;
+                }
+
+            h2#IO IO
+            code.
+                pub struct IO {
+                    tokens: usize,
+                    events: Events,
+                    poll: Poll,
+                    selectors: Vec&lt;Selector>,
+                    slots: Vec&lt;usize>,
+                    running: bool,
+                    i: usize,
+                }
+
+            h2#CpsTask CpsTask
+            code.
+                pub struct CpsTask&lt;'a> {
+                    interpreter: Interpreter&lt;'a>,
+                    ast: Option&lt;&amp;'a AST&lt;'a>>,
                 }
 
