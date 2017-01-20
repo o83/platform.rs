@@ -25,12 +25,12 @@ With one writer cursor and multiple readers equals to number of cores.</p><code>
     publisher: Publisher&lt;Message>,
     subscribers: Vec&lt;Subscriber&lt;Message>>,
 }
-</code><h2 id="Host">Host</h2><p>pub struct Host<'a> {
+</code><h2 id="Host">Host</h2><code>pub struct Host<'a> {
     args: Args<'a>,
     boot: Handle<Boot<'a>>,
     scheds: Vec<Scheduler<'a>>,
 }
-</p><h2 id="Boot">Boot</h2><p>The Boot represents a type of boot core which hash several
+</code><h2 id="Boot">Boot</h2><p>The Boot represents a type of boot core which hash several
 select poll system devices such as WebSocket, Console and
 InterCore bus selectors along with own CPS Task Reactor.</p><code>pub struct Boot<'a> {
     io: IO,
