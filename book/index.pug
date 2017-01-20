@@ -70,10 +70,10 @@ block content
 
             h2#Host Host
             code.
-                pub struct Host<'a> {
-                    args: Args<'a>,
-                    boot: Handle<Boot<'a>>,
-                    scheds: Vec<Scheduler<'a>>,
+                pub struct Host&lt;'a> {
+                    args: Args&lt;'a>,
+                    boot: Handle&lt;Boot<'a>>,
+                    scheds: Vec&lt;Scheduler&lt;'a>>,
                 }
 
             h2#Boot Boot
@@ -82,18 +82,18 @@ block content
                 select poll system devices such as WebSocket, Console and
                 InterCore bus selectors along with own CPS Task Reactor.
             code.
-                pub struct Boot<'a> {
+                pub struct Boot&lt;'a> {
                     io: IO,
-                    scheduler: Scheduler<'a>,
-                    publisher: Publisher<Message>,
+                    scheduler: Scheduler&lt;'a>,
+                    publisher: Publisher&lt;Message>,
                 }
 
             h2#Scheduler Scheduler
             code.
-                pub struct Scheduler<'a> {
-                    tasks: Vec<T3<Job<'a>>>,
-                    ctxs: Vec<Context<'a>>,
-                    bus: Option<Channel>,
+                pub struct Scheduler&lt;'a> {
+                    tasks: Vec<T3&lt;Job&lt;'a>>>,
+                    ctxs: Vec&lt;Context&lt;'a>>,
+                    bus: Option&lt;Channel>,
                 }
 
 
