@@ -20,8 +20,18 @@ block content
                         for i in v
                             li: a(href='#'+i)= i.toUpperCase()
 
-
+            h2#Abstract Low Latency Transport
+            p.
+                The InterCore bus constructed of number of SPMC queues per core. The bus itself
+                has start topology between cores and MPSC is organized as a computable function
+                over a set of publisher queues. Each core has exatcly one publisher queue.
+            p.
+                The InterCore protocol handler is called <b>poll_bus</b> and is a member of each <b>Scheduler</b>.
+                You may think of InterCore as teleport trasnport between processors as <b>poll_bus</b> is being fired
+                on each yield to scheduler and if any core has any message addressed to you since last yield on your
+                core, then your core before next task will execute the handler on this message.
         .intro
+
             h2#Publisher pub [capacity]
             p.
                 <b>pub</b> creates new publisher CAS cursor for writing. Returns system-wide cursor Id.
