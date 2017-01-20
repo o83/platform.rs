@@ -10,8 +10,8 @@ block content
             h1#taxonomy API
             -
                 var types = {
-                        'Memory': ['Pub','Sub','Cursor','Ring','Chan'],
-                        'Processor': ['Task','CpsTask','Timer','Core','Hub','Host','IO'],
+                        'Memory': ['Pub','Sub','Cursor','Ring','Channel'],
+                        'Processor': ['Task','CpsTask','Timer','Boot','Scheduler','Host','IO'],
                     }
 
             .type
@@ -58,7 +58,7 @@ block content
                     cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
                 }
 
-            h2#Chan Channel
+            h2#Channel Channel
             p.
                 The Channel represents a InterCore node component.
                 With one writer cursor and multiple readers equals to number of cores.
@@ -68,46 +68,34 @@ block content
                     subscribers: Vec&lt;Subscriber&lt;Message>>,
                 }
 
-            h2#Core Core
+            h2#Host Host
             p.
-                The Core represents a Task Reactor type with InterCore bus and own scheduler.
-                By default InterCore task is spawned during creation.
-                You can spawn CPS and Rust tasks on Core reactor.
-            code.
-                pub struct Core'a> {
-                    scheduler: Scheduler&lt;'a, Job'a>>,
-                    bus: UnsafeCell&lt;Channel>,
-                    id: usize,
+                pub struct Host<'a> {
+                    args: Args<'a>,
+                    boot: Handle<Boot<'a>>,
+                    scheds: Vec<Scheduler<'a>>,
                 }
 
-            h2#Hub Hub
+            h2#Boot Boot
             p.
-                The Hub represents a type of boot core which hash several
+                The Boot represents a type of boot core which hash several
                 select poll system devices such as WebSocket, Console and
                 InterCore bus selectors along with own CPS Task Reactor.
             code.
-                pub struct Hub&lt;'a> {
+                pub struct Boot<'a> {
                     io: IO,
-                    scheduler: Scheduler&lt;'a, CpsTask&lt;'a>>,
-                    ctx: Rc&lt;Ctx>,
+                    scheduler: Scheduler<'a>,
+                    publisher: Publisher<Message>,
                 }
 
             h2#Scheduler Scheduler
             code.
-                pub struct Scheduler&lt;'a, T: 'a> {
-                    tasks: Vec&lt;(T, TaskTermination)>,
-                    ctxs: Vec&lt;Context&lt;'a>>,
+                pub struct Scheduler<'a> {
+                    tasks: Vec<T3<Job<'a>>>,
+                    ctxs: Vec<Context<'a>>,
+                    bus: Option<Channel>,
                 }
 
-            h2#Task Task
-            code.
-                pub trait Task&lt;'a> {
-                    fn init(&'a mut self, input: Option&lt;&amp;'a str>);
-                    fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
-                    fn finalize(&'a mut self);
-                    fn poll(&'a mut self, c: Context&lt;'a>)
-                                               -> PollCtx&lt;'a>, Error>;
-                }
 
             h2#IO IO
             code.
@@ -119,6 +107,16 @@ block content
                     slots: Vec&lt;usize>,
                     running: bool,
                     i: usize,
+                }
+
+            h2#Task Task
+            code.
+                pub trait Task&lt;'a> {
+                    fn init(&'a mut self, input: Option&lt;&amp;'a str>);
+                    fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
+                    fn finalize(&'a mut self);
+                    fn poll(&'a mut self, c: Context&lt;'a>)
+                                               -> PollCtx&lt;'a>, Error>;
                 }
 
             h2#CpsTask CpsTask
