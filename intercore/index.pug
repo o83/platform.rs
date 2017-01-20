@@ -20,6 +20,7 @@ block content
                         for i in v
                             li: a(href='#'+i)= i.toUpperCase()
 
+        .intro
             h2#Abstract Low Latency Transport
             p.
                 The InterCore bus constructed of number of SPMC queues per core. The bus itself
@@ -30,7 +31,6 @@ block content
                 You may think of InterCore as teleport trasnport between processors as <b>poll_bus</b> is being fired
                 on each yield to scheduler and if any core has any message addressed to you since last yield on your
                 core, then your core before next task will execute the handler on this message.
-        .intro
 
             h2#Publisher pub [capacity]
             p.
