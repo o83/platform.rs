@@ -10,8 +10,8 @@ block content
             h1#taxonomy API
             -
                 var types = {
-                        'Memory': ['Pub','Sub','Cursor','Ring','Chan'],
-                        'Processor': ['Task','CpsTask','Timer','Boot','Scheduler','Host','IO'],
+                        'Memory': ['Pub','Sub','Cursor','Ring','Chan','Mem'],
+                        'Processor': ['Task','CpsTask','Timer','Scheduler','IO','Boot'],
                     }
 
             .type
@@ -68,34 +68,54 @@ block content
                     subscribers: Vec&lt;Subscriber&lt;Message>>,
                 }
 
-            h2#Host Host
+            h2#Mem Memory
+            p.
+                The Memory represents avaiable number of Pubishers and Subscribers on core.
+                This value is passed as shared to each task created on core.
             code.
-                pub struct Host&lt;'a> {
-                    args: Args&lt;'a>,
-                    boot: Handle&lt;Boot<'a>>,
-                    scheds: Vec&lt;Scheduler&lt;'a>>,
+                pub struct  {
+                    publisher: Vec&lt;Publisher&lt;Value>,
+                    subscribers: Vec&lt;Subscriber&lt;Value>>,
+                }
+
+            h2#Scheduler Scheduler
+            p.
+                The Scheduler represents the processor core and known to be BSP
+                or bootstrap processor and application processors AP. The default BSP core
+                contains in it's <b>io</b> Console and WebSocket IO selectors.
+                It means BPS gave it's loop to kernel, while AP processors don't (IO queue is empty).
+                There are InterCore messages that can add or remove arbitrary IO
+                selectors to <b>Scheduler</b> for custom configurations.
+            code.
+                pub struct Scheduler&lt;'a> {
+                    pub tasks: Vec<T3&lt;Job&lt;'a>>>,
+                    pub bus: Channel,
+                    pub queues: Memory,
+                    pub io: IO,
                 }
 
             h2#Boot Boot
             p.
-                The Boot represents a type of boot core which hash several
-                select poll system devices such as WebSocket, Console and
-                InterCore bus selectors along with own CPS Task Reactor.
+                The boot process composed of two functions: 1) creating the bus topology and
+                2) parking scheduler instances to cores. By default star topology is used:
+                where any core can talk to each other. The BPS processor is allocated
+                for maintanance shell and other custom IO operations such as logging, stats,
+                backup or other non real-time operations.
             code.
-                pub struct Boot&lt;'a> {
-                    io: IO,
-                    scheduler: Scheduler&lt;'a>,
-                    publisher: Publisher&lt;Message>,
+                pub fn star<'a>(sched_num: usize) -> Vec<Scheduler<'a>>;
+
+                pub fn park<'a>(mut scheds: Vec<Scheduler<'a>>) ->
+                    Scheduler<'a> {
+                    let sz = scheds.len();
+                    for id in 1..sz {
+                        if let Some(mut core) = scheds.pop() {
+                            unsafe { spawn_on(id, move || core.run()); } } }
+                    scheds.pop().expect("No BSP")
                 }
 
-            h2#Scheduler Scheduler
-            code.
-                pub struct Scheduler&lt;'a> {
-                    tasks: Vec<T3&lt;Job&lt;'a>>>,
-                    ctxs: Vec&lt;Context&lt;'a>>,
-                    bus: Option&lt;Channel>,
+                fn main() {
+                    park(star(16)).run0(input);
                 }
-
 
             h2#IO IO
             code.
@@ -106,7 +126,7 @@ block content
                     selectors: Vec&lt;Selector>,
                     slots: Vec&lt;usize>,
                     running: bool,
-                    i: usize,
+                    polled: usize,
                 }
 
             h2#Task Task

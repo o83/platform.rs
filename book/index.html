@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="http://platform.rs/main.css"><title>Book</title></head><body class="content"><header class="header"><a href="http://platform.rs/"><img class="header__logo" src="http://platform.rs/index.png"/></a><div class="header__titles"><h1 class="header__title">The Book</h1><h4 class="header__subtitle">A Guide to The Kernel Structures</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">API</h1><div class="type"><ol class="type__col"><h3>MEMORY</h3><li><a href="#Pub">PUB</a></li><li><a href="#Sub">SUB</a></li><li><a href="#Cursor">CURSOR</a></li><li><a href="#Ring">RING</a></li><li><a href="#Chan">CHAN</a></li></ol><ol class="type__col"><h3>PROCESSOR</h3><li><a href="#Task">TASK</a></li><li><a href="#CpsTask">CPSTASK</a></li><li><a href="#Timer">TIMER</a></li><li><a href="#Boot">BOOT</a></li><li><a href="#Scheduler">SCHEDULER</a></li><li><a href="#Host">HOST</a></li><li><a href="#IO">IO</a></li></ol></div></div><div class="intro"><h2>The Book</h2><p>The Kernel is an Actor system with two main Actor types: Queues,
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="x-ua-compatible" content="ie=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="author" content="Maxim Sokhatsky"><meta property="og:title" content="The Platform"><meta property="og:image" content="http://platform.rs/index.png"><meta property="og:type" content="website"><meta property="fb:app_id" content="118554188236439"><meta property="og:url" content="http://platform.rs"><meta property="og:description" content="The Platform"><link rel="stylesheet" href="http://platform.rs/main.css"><title>Book</title></head><body class="content"><header class="header"><a href="http://platform.rs/"><img class="header__logo" src="http://platform.rs/index.png"/></a><div class="header__titles"><h1 class="header__title">The Book</h1><h4 class="header__subtitle">A Guide to The Kernel Structures</h4></div></header><article class="main"><div class="types"><h1 id="taxonomy">API</h1><div class="type"><ol class="type__col"><h3>MEMORY</h3><li><a href="#Pub">PUB</a></li><li><a href="#Sub">SUB</a></li><li><a href="#Cursor">CURSOR</a></li><li><a href="#Ring">RING</a></li><li><a href="#Chan">CHAN</a></li><li><a href="#Mem">MEM</a></li></ol><ol class="type__col"><h3>PROCESSOR</h3><li><a href="#Task">TASK</a></li><li><a href="#CpsTask">CPSTASK</a></li><li><a href="#Timer">TIMER</a></li><li><a href="#Scheduler">SCHEDULER</a></li><li><a href="#IO">IO</a></li><li><a href="#Boot">BOOT</a></li></ol></div></div><div class="intro"><h2>The Book</h2><p>The Kernel is an Actor system with two main Actor types: Queues,
 represented as ring buffers of memory slices;
 and Tasks, cpu processing atomic ports. Queues could be two types: Publisher,
 who holds writer cursors; and Subscriber, who holds reader cursors.
@@ -25,24 +25,40 @@ With one writer cursor and multiple readers equals to number of cores.</p><code>
     publisher: Publisher&lt;Message>,
     subscribers: Vec&lt;Subscriber&lt;Message>>,
 }
-</code><h2 id="Host">Host</h2><code>pub struct Host&lt;'a> {
-    args: Args&lt;'a>,
-    boot: Handle&lt;Boot<'a>>,
-    scheds: Vec&lt;Scheduler&lt;'a>>,
+</code><h2 id="Mem">Memory</h2><p>The Memory represents avaiable number of Pubishers and Subscribers on core.
+This value is passed as shared to each task created on core.</p><code>pub struct  {
+    publisher: Vec&lt;Publisher&lt;Value>,
+    subscribers: Vec&lt;Subscriber&lt;Value>>,
 }
-</code><h2 id="Boot">Boot</h2><p>The Boot represents a type of boot core which hash several
-select poll system devices such as WebSocket, Console and
-InterCore bus selectors along with own CPS Task Reactor.</p><code>pub struct Boot&lt;'a> {
-    io: IO,
-    scheduler: Scheduler&lt;'a>,
-    publisher: Publisher&lt;Message>,
+</code><h2 id="Scheduler">Scheduler</h2><p>The Scheduler represents the processor core and known to be BSP
+or bootstrap processor and application processors AP. The default BSP core
+contains in it's <b>io</b> Console and WebSocket IO selectors.
+It means BPS gave it's loop to kernel, while AP processors don't (IO queue is empty).
+There are InterCore messages that can add or remove arbitrary IO
+selectors to <b>Scheduler</b> for custom configurations.</p><code>pub struct Scheduler&lt;'a> {
+    pub tasks: Vec<T3&lt;Job&lt;'a>>>,
+    pub bus: Channel,
+    pub queues: Memory,
+    pub io: IO,
 }
-</code><h2 id="Scheduler">Scheduler</h2><code>pub struct Scheduler&lt;'a> {
-    tasks: Vec<T3&lt;Job&lt;'a>>>,
-    ctxs: Vec&lt;Context&lt;'a>>,
-    bus: Option&lt;Channel>,
+</code><h2 id="Boot">Boot</h2><p>The boot process composed of two functions: 1) creating the bus topology and
+2) parking scheduler instances to cores. By default star topology is used:
+where any core can talk to each other. The BPS processor is allocated
+for maintanance shell and other custom IO operations such as logging, stats,
+backup or other non real-time operations.</p><code>pub fn star<'a>(sched_num: usize) -> Vec<Scheduler<'a>>;
+
+pub fn park<'a>(mut scheds: Vec<Scheduler<'a>>) ->
+    Scheduler<'a> {
+    let sz = scheds.len();
+    for id in 1..sz {
+        if let Some(mut core) = scheds.pop() {
+            unsafe { spawn_on(id, move || core.run()); } } }
+    scheds.pop().expect("No BSP")
 }
 
+fn main() {
+    park(star(16)).run0(input);
+}
 </code><h2 id="IO">IO</h2><code>pub struct IO {
     tokens: usize,
     events: Events,
@@ -50,7 +66,7 @@ InterCore bus selectors along with own CPS Task Reactor.</p><code>pub struct Boo
     selectors: Vec&lt;Selector>,
     slots: Vec&lt;usize>,
     running: bool,
-    i: usize,
+    polled: usize,
 }
 </code><h2 id="Task">Task</h2><code>pub trait Task&lt;'a> {
     fn init(&'a mut self, input: Option&lt;&amp;'a str>);
