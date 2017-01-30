@@ -26,9 +26,9 @@ With one writer cursor and multiple readers equals to number of cores.</p><code>
     subscribers: Vec&lt;Subscriber&lt;Message>>,
 }
 </code><h2 id="Mem">Memory</h2><p>The Memory represents avaiable number of Pubishers and Subscribers on core.
-This value is passed as shared to each task created on core.</p><code>pub struct  {
-    publisher: Vec&lt;Publisher&lt;Value>,
-    subscribers: Vec&lt;Subscriber&lt;Value>>,
+This value is passed as shared to each task created on core.</p><code>pub struct Memory<'a> {
+    publishers: Vec&lt;Publisher&lt;Value&lt;'a>>,
+    subscribers: Vec&lt;Subscriber&lt;Value&lt;'a>>>,
 }
 </code><h2 id="Scheduler">Scheduler</h2><p>The Scheduler represents the processor core and known to be BSP
 or bootstrap processor and application processors AP. The default BSP core
@@ -36,18 +36,24 @@ contains in it's <b>io</b> Console and WebSocket IO selectors.
 It means BPS gave it's loop to kernel, while AP processors don't (IO queue is empty).
 There are InterCore messages that can add or remove arbitrary IO
 selectors to <b>Scheduler</b> for custom configurations.</p><code>pub struct Scheduler&lt;'a> {
-    pub tasks: Vec<T3&lt;Job&lt;'a>>>,
+    pub tasks: Vec&lt;T3&lt;Job&lt;'a>>>,
     pub bus: Channel,
-    pub queues: Memory,
+    pub queues: Memory&lt;'a>,
     pub io: IO,
 }
 </code><h2 id="Boot">Boot</h2><p>The boot process composed of two functions: 1) creating the bus topology and
 2) parking scheduler instances to cores. By default star topology is used:
 where any core can talk to each other. The BPS processor is allocated
 for maintanance shell and other custom IO operations such as logging, stats,
-backup or other non real-time operations.</p><code>pub fn star<'a>(sched_num: usize) -> Vec<Scheduler<'a>>;
+backup or other non real-time operations. By calling <b>run0</b> function
+parks the BSP scheduler while other core are parked with <b>run</b> call.</p><code>pub fn simple<'a>(sched_num: usize) -> Vec&lt;Scheduler&lt;'a>>;
+    let mut scheds: Vec<Scheduler<'a>> = Vec::new();
+    for i in 0..sched_num {
+        scheds.push(Scheduler::with_channel(i)); }
+    scheds
+}
 
-pub fn park<'a>(mut scheds: Vec<Scheduler<'a>>) ->
+pub fn park<'a>(mut scheds: Vec&lt;Scheduler&lt;'a>>) ->
     Scheduler<'a> {
     let sz = scheds.len();
     for id in 1..sz {
@@ -56,10 +62,21 @@ pub fn park<'a>(mut scheds: Vec<Scheduler<'a>>) ->
     scheds.pop().expect("No BSP")
 }
 
-fn main() {
-    park(star(16)).run0(input);
+pub fn main() {
+    park(simple(16)).run0(input);
 }
-</code><h2 id="IO">IO</h2><code>pub struct IO {
+</code><h2>Looper</h2><p>Each AP scheduler run loop has several implementations but the
+default is Weighted Fair Queueing (WFQ) controlled by three parameters:
+1) Bus 2) IO and 3) Tasks poll quantums. Inside the loop scheduler
+performs each flow within a given quantum. These parameters could
+be changed with <b>QoS</b> InterCore protocol bus message.</p><code>pub fn run(&mut self) {
+    loop { self.poll_bus(self.bus_quantum);
+           self.poll_io(self.io_quantum);
+           self.poll_tasks(self.tasks_quantum);
+           self.hibernate(); }
+}</code><p>The BPS run loop is a bit more complex as it needs to run Shell Task and
+route all system IO messages to that task with InterCore <b>Exec</b> protocol message.
+</p><h2 id="IO">IO</h2><code>pub struct IO {
     tokens: usize,
     events: Events,
     poll: Poll,
