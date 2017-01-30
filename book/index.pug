@@ -106,7 +106,8 @@ block content
                 pub fn simple<'a>(sched_num: usize) -> Vec&lt;Scheduler&lt;'a>>;
                     let mut scheds: Vec<Scheduler<'a>> = Vec::new();
                     for i in 0..sched_num {
-                        scheds.push(Scheduler::with_channel(i)); }
+                        scheds.push(Scheduler::with_channel(i));
+                    }
                     scheds
                 }
 
@@ -115,7 +116,9 @@ block content
                     let sz = scheds.len();
                     for id in 1..sz {
                         if let Some(mut core) = scheds.pop() {
-                            unsafe { spawn_on(id, move || core.run()); } } }
+                            unsafe { spawn_on(id, move || core.run()); }
+                        }
+                    }
                     scheds.pop().expect("No BSP")
                 }
 
@@ -132,10 +135,12 @@ block content
                 be changed with <b>QoS</b> InterCore protocol bus message.
             code.
                 pub fn run(&mut self) {
-                    loop { self.poll_bus(self.bus_quantum);
-                           self.poll_io(self.io_quantum);
-                           self.poll_tasks(self.tasks_quantum);
-                           self.hibernate(); }
+                    loop {
+                        self.poll_bus(self.bus_quantum);
+                        self.poll_io(self.io_quantum);
+                        self.poll_tasks(self.tasks_quantum);
+                        self.hibernate();
+                    }
                 }
             p.
                 The BPS run loop is a bit more complex as it needs to run Shell Task and
