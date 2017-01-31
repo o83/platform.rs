@@ -4,40 +4,41 @@ block title
     title Language
 
 block content
-    +header('http://platform.rs/index.png', 'The Language', 'Operating Language and its O-CPS Interpreter')
-    article.main
-        .types
-            h1#taxonomy Table of Contents
-            -
-                var types = {
-                        'Setup': ['Platform','Boot','Args','Console'],
-                        'Basic': ['Recursion','Servers'],
-                        'Simple': ['Number','Sequence','Symbol'],
-                        'Complex': ['Vector','List','Dict','Table'],
-                        'Variables': ['Assign','Scopes','Globals'],
-                        'Functions': ['Definition','Usage','Verbs','Adverbs'],
-                        'Control': ['Condition','Switch','CHR'],
-                        'Effects': ['Errors','Channels','Random']
-                    }
+    +header('The Language', 'Operating Language<br>and its O-CPS Interpreter')
+    section.types
+        h1.types__title#taxonomy Table of Contents
+        -
+            var types = {
+                'Setup': ['Platform','Boot','Args','Console'],
+                'Basic': ['Recursion','Servers'],
+                'Simple': ['Number','Sequence','Symbol'],
+                'Complex': ['Vector','List','Dict','Table'],
+                'Variables': ['Assign','Scopes','Globals'],
+                'Functions': ['Definition','Usage','Verbs','Adverbs'],
+                'Control': ['Condition','Switch','CHR'],
+                'Effects': ['Errors','Channels','Random']}
+        - var j =1
+        nav.types__row
+            for v, k in types
+                if (j % 2 == 1)
+                    hr
+                - j++
+                ol.types__col
+                    h3.types__subtitle= k.toUpperCase()
+                    for i in v
+                        li.types__item: a(href='#'+i)= i.toUpperCase()
 
-            .type
-                for v, k in types
-                    ol.type__col
-                        h3= k.toUpperCase()
-                        for i in v
-                            li: a(href='#'+i)= i.toUpperCase()
+    article
+        h2 Platform
+        p.
+            The Language is a part of The Kernel executable.
 
-            section
-                h2 Platform
-                p.
-                    The Language is a part of The Kernel executable.
+        code.
+            $ o
+            Welcome to O language interpreter 0.12.0
+            o)
+        h2 Specification
+        p.
+            The Language Specification in System F
 
-                code.
-                    $ o
-                    Welcome to O language interpreter 0.12.0
-                    o)
-                h2 Specification
-                p.
-                    The Language Specification in System F
-
-                <img src="http://5ht.co/img/O.png" width="90%">
+        <img src="http://5ht.co/img/O.png" width="90%">

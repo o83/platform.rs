@@ -1,9 +1,11 @@
 .footer {
     width: 100%;
-    padding: 15px;
-    background-image: linear-gradient(to left, #B066FE, #63E2FF);
-    color: #282828;
+    padding: 30px 0;
+    color: #f9f9f9;
     text-align: center;
+    position: relative;
+    background: #7F8C8D;
+    margin-top: 50px;
 
     &__logo {
         width: 50px;
@@ -14,10 +16,9 @@
         font-size: 20px;
         white-space: pre;
     }
-
     @media(min-width: 768px) {
         &__copy {
-            font-size: 28px;       
+            font-size: 24px;
         }
     }
 }

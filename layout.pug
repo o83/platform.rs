@@ -1,11 +1,8 @@
-mixin header(logo, title, subtitle)
+mixin header(title, subtitle)
     header.header
-        a(href='http://platform.rs/')
-            img.header__logo(src=logo)
         .header__titles
             h1.header__title!= title
             h4.header__subtitle!= subtitle
-
 
 doctype html
 html
@@ -20,13 +17,22 @@ html
         meta(property='fb:app_id' content='118554188236439')
         meta(property='og:url' content='http://platform.rs' )
         meta(property='og:description' content='The Platform')
-        link(rel='stylesheet' href='http://platform.rs/main.css')
+        link(rel='stylesheet' href='/main.css')
         block title
             title default
 
-    body.content
+
+    body
+        nav.main-nav
+            h1 Stream Processing &amp; Language&nbsp;Platform
+            ul
+                li: a(href='/') KERNEL
+                li: a(href='/language') LANGUAGE
+                li: a(href='/intercore') INTERCORE
+                li: a(href='/book') BOOK
+
         block content
         footer.footer
-            img.footer__logo(src='http://platform.rs/stamp.svg')
+            img.footer__logo(src='/stamp.svg')
             span.footer__copy 2016&mdash;2017 &copy; Tachyonic
-        script(src='http://platform.rs/hi.js?v=2')
+        script(src='/hi.js')

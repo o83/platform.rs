@@ -1,177 +1,173 @@
 extends ../layout.pug
 
+
 block title
     title Book
 
 block content
-    +header('http://platform.rs/index.png', 'The Book', 'A Guide to The Kernel Structures')
-    article.main
-        .types
-            h1#taxonomy API
-            -
-                var types = {
-                        'Memory': ['Pub','Sub','Cursor','Ring','Chan','Mem'],
-                        'Processor': ['Task','CpsTask','Timer','Scheduler','IO','Boot'],
-                    }
-
-            .type
-                for v, k in types
-                    ol.type__col
-                        h3= k.toUpperCase()
-                        for i in v
-                            li: a(href='#'+i)= i.toUpperCase()
+    +header('The Book', 'A Guide to The Kernel Structures')
+    - 
+        var types = {'Memory': ['Pub','Sub','Cursor','Ring','Chan','Mem'],
+        'Processor': ['Task','CpsTask','Timer','Scheduler','IO','Boot']}
+    section.types
+        h1.types__title#taxonomy API
+        nav.types__row
+            for v, k in types
+                ol.types__col
+                    h3.types__subtitle= k.toUpperCase()
+                    for i in v
+                        li.types__item: a(href='#'+i)= i.toUpperCase()
 
 
-        .intro
-            h2 The Book
-            p.
-                The Kernel is an Actor system with two main Actor types: Queues,
-                represented as ring buffers of memory slices;
-                and Tasks, cpu processing atomic ports. Queues could be two types: Publisher,
-                who holds writer cursors; and Subscriber, who holds reader cursors.
-                Tasks represented as Rust LLVM tasks and/or CPS interpreter tasks.
-                There is two special tasks: InterCore task spawned at any enabled cores;
-                and CPS interpreter task of The Kernel Maintanance Shell is spawned at boot core, which
-                also runs Console and WebSocket system IO. During system lifetime
-                different CPS and Rust tasks could be spawned.
-            p.
-                Besides Queues and Tasks there is also Timers and other
-                system IO tasks such as Network or Files. There are other entities such as
-                Cores which are binded to cpus and run the task scheduler loops.
-            p.
-                The entire Virtual Machine is a set of Cores.
+    article
+        h2 The Book
+        p.
+            The Kernel is an Actor system with two main Actor types: Queues,
+            represented as ring buffers of memory slices;
+            and Tasks, cpu processing atomic ports. Queues could be two types: Publisher,
+            who holds writer cursors; and Subscriber, who holds reader cursors.
+            Tasks represented as Rust LLVM tasks and/or CPS interpreter tasks.
+            There is two special tasks: InterCore task spawned at any enabled cores;
+            and CPS interpreter task of The Kernel Maintanance Shell is spawned at boot core, which
+            also runs Console and WebSocket system IO. During system lifetime
+            different CPS and Rust tasks could be spawned.
+        p.
+            Besides Queues and Tasks there is also Timers and other
+            system IO tasks such as Network or Files. There are other entities such as
+            Cores which are binded to cpus and run the task scheduler loops.
+        p.
+            The entire Virtual Machine is a set of Cores.
 
-            h2#Pub Publisher
-            code.
-                pub struct Publisher&lt;T> {
-                    ring: Arc&lt;RingBuffer&lt;T>>,
-                    next: Cell&lt;Sequence>,
-                    cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
+        h2#Pub Publisher
+        code.
+            pub struct Publisher&lt;T> {
+                ring: Arc&lt;RingBuffer&lt;T>>,
+                next: Cell&lt;Sequence>,
+                cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
+            }
+
+        h2#Sub Subscriber
+        code.
+            pub struct Subscriber&lt;T> {
+                ring: Arc&lt;RingBuffer&lt;T>>,
+                token: usize,
+                next: Cell&lt;Sequence>,
+                cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
+            }
+
+        h2#Chan Channel
+        p.
+            The Channel represents a InterCore node component.
+            With one writer cursor and multiple readers equals to number of cores.
+        code.
+            pub struct Channel {
+                publisher: Publisher&lt;Message>,
+                subscribers: Vec&lt;Subscriber&lt;Message>>,
+            }
+
+        h2#Mem Memory
+        p.
+            The Memory represents avaiable number of Pubishers and Subscribers on core.
+            This value is passed as shared to each task created on core.
+        code.
+            pub struct Memory<'a> {
+                publishers: Vec&lt;Publisher&lt;Value&lt;'a>>,
+                subscribers: Vec&lt;Subscriber&lt;Value&lt;'a>>>,
+            }
+
+        h2#Scheduler Scheduler
+        p.
+            The Scheduler represents the processor core and known to be BSP
+            or bootstrap processor and application processors AP. The default BSP core
+            contains in it's <b>io</b> Console and WebSocket IO selectors.
+            It means BPS gave it's loop to kernel, while AP processors don't (IO queue is empty).
+            There are InterCore messages that can add or remove arbitrary IO
+            selectors to <b>Scheduler</b> for custom configurations.
+        code.
+            pub struct Scheduler&lt;'a> {
+                pub tasks: Vec&lt;T3&lt;Job&lt;'a>>>,
+                pub bus: Channel,
+                pub queues: Memory&lt;'a>,
+                pub io: IO,
+            }
+
+        h2#Boot Boot
+        p.
+            The boot process composed of two functions: 1) creating the bus topology and
+            2) parking scheduler instances to cores. By default star topology is used:
+            where any core can talk to each other. The BPS processor is allocated
+            for maintanance shell and other custom IO operations such as logging, stats,
+            backup or other non real-time operations. By calling <b>run0</b> function
+            parks the BSP scheduler while other core are parked with <b>run</b> call.
+        code.
+            pub fn simple<'a>(sched_num: usize) -> Vec&lt;Scheduler&lt;'a>>;
+                let mut scheds: Vec<Scheduler<'a>> = Vec::new();
+                for i in 0..sched_num {
+                    scheds.push(Scheduler::with_channel(i));
                 }
+                scheds
+            }
 
-            h2#Sub Subscriber
-            code.
-                pub struct Subscriber&lt;T> {
-                    ring: Arc&lt;RingBuffer&lt;T>>,
-                    token: usize,
-                    next: Cell&lt;Sequence>,
-                    cursors: UncheckedUnsafeArc&lt;Vec&lt;Cursor>>,
-                }
-
-            h2#Chan Channel
-            p.
-                The Channel represents a InterCore node component.
-                With one writer cursor and multiple readers equals to number of cores.
-            code.
-                pub struct Channel {
-                    publisher: Publisher&lt;Message>,
-                    subscribers: Vec&lt;Subscriber&lt;Message>>,
-                }
-
-            h2#Mem Memory
-            p.
-                The Memory represents avaiable number of Pubishers and Subscribers on core.
-                This value is passed as shared to each task created on core.
-            code.
-                pub struct Memory<'a> {
-                    publishers: Vec&lt;Publisher&lt;Value&lt;'a>>,
-                    subscribers: Vec&lt;Subscriber&lt;Value&lt;'a>>>,
-                }
-
-            h2#Scheduler Scheduler
-            p.
-                The Scheduler represents the processor core and known to be BSP
-                or bootstrap processor and application processors AP. The default BSP core
-                contains in it's <b>io</b> Console and WebSocket IO selectors.
-                It means BPS gave it's loop to kernel, while AP processors don't (IO queue is empty).
-                There are InterCore messages that can add or remove arbitrary IO
-                selectors to <b>Scheduler</b> for custom configurations.
-            code.
-                pub struct Scheduler&lt;'a> {
-                    pub tasks: Vec&lt;T3&lt;Job&lt;'a>>>,
-                    pub bus: Channel,
-                    pub queues: Memory&lt;'a>,
-                    pub io: IO,
-                }
-
-            h2#Boot Boot
-            p.
-                The boot process composed of two functions: 1) creating the bus topology and
-                2) parking scheduler instances to cores. By default star topology is used:
-                where any core can talk to each other. The BPS processor is allocated
-                for maintanance shell and other custom IO operations such as logging, stats,
-                backup or other non real-time operations. By calling <b>run0</b> function
-                parks the BSP scheduler while other core are parked with <b>run</b> call.
-            code.
-                pub fn simple<'a>(sched_num: usize) -> Vec&lt;Scheduler&lt;'a>>;
-                    let mut scheds: Vec<Scheduler<'a>> = Vec::new();
-                    for i in 0..sched_num {
-                        scheds.push(Scheduler::with_channel(i));
-                    }
-                    scheds
-                }
-
-                pub fn park<'a>(mut scheds: Vec&lt;Scheduler&lt;'a>>) ->
-                    Scheduler<'a> {
-                    let sz = scheds.len();
-                    for id in 1..sz {
-                        if let Some(mut core) = scheds.pop() {
-                            unsafe { spawn_on(id, move || core.run()); }
-                        }
-                    }
-                    scheds.pop().expect("No BSP")
-                }
-
-                pub fn main() {
-                    park(simple(16)).run0(input);
-                }
-
-            h2 Looper
-            p.
-                Each AP scheduler run loop has several implementations but the
-                default is Weighted Fair Queueing (WFQ) controlled by three parameters:
-                1) Bus 2) IO and 3) Tasks poll quantums. Inside the loop scheduler
-                performs each flow within a given quantum. These parameters could
-                be changed with <b>QoS</b> InterCore protocol bus message.
-            code.
-                pub fn run(&mut self) {
-                    loop {
-                        self.poll_bus(self.bus_quantum);
-                        self.poll_io(self.io_quantum);
-                        self.poll_tasks(self.tasks_quantum);
-                        self.hibernate();
+            pub fn park<'a>(mut scheds: Vec&lt;Scheduler&lt;'a>>) ->
+                Scheduler<'a> {
+                let sz = scheds.len();
+                for id in 1..sz {
+                    if let Some(mut core) = scheds.pop() {
+                        unsafe { spawn_on(id, move || core.run()); }
                     }
                 }
-            p.
-                The BPS run loop is a bit more complex as it needs to run Shell Task and
-                route all system IO messages to that task with InterCore <b>Exec</b> protocol message.
+                scheds.pop().expect("No BSP")
+            }
 
-            h2#IO IO
-            code.
-                pub struct IO {
-                    tokens: usize,
-                    events: Events,
-                    poll: Poll,
-                    selectors: Vec&lt;Selector>,
-                    slots: Vec&lt;usize>,
-                    running: bool,
-                    polled: usize,
+            pub fn main() {
+                park(simple(16)).run0(input);
+            }
+
+        h2 Looper
+        p.
+            Each AP scheduler run loop has several implementations but the
+            default is Weighted Fair Queueing (WFQ) controlled by three parameters:
+            1) Bus 2) IO and 3) Tasks poll quantums. Inside the loop scheduler
+            performs each flow within a given quantum. These parameters could
+            be changed with <b>QoS</b> InterCore protocol bus message.
+        code.
+            pub fn run(&mut self) {
+                loop {
+                    self.poll_bus(self.bus_quantum);
+                    self.poll_io(self.io_quantum);
+                    self.poll_tasks(self.tasks_quantum);
+                    self.hibernate();
                 }
+            }
+        p.
+            The BPS run loop is a bit more complex as it needs to run Shell Task and
+            route all system IO messages to that task with InterCore <b>Exec</b> protocol message.
 
-            h2#Task Task
-            code.
-                pub trait Task&lt;'a> {
-                    fn init(&'a mut self, input: Option&lt;&amp;'a str>);
-                    fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
-                    fn finalize(&'a mut self);
-                    fn poll(&'a mut self, c: Context&lt;'a>)
-                                               -> PollCtx&lt;'a>, Error>;
-                }
+        h2#IO IO
+        code.
+            pub struct IO {
+                tokens: usize,
+                events: Events,
+                poll: Poll,
+                selectors: Vec&lt;Selector>,
+                slots: Vec&lt;usize>,
+                running: bool,
+                polled: usize,
+            }
 
-            h2#CpsTask CpsTask
-            code.
-                pub struct CpsTask&lt;'a> {
-                    interpreter: Interpreter&lt;'a>,
-                    ast: Option&lt;&amp;'a AST&lt;'a>>,
-                }
+        h2#Task Task
+        code.
+            pub trait Task&lt;'a> {
+                fn init(&'a mut self, input: Option&lt;&amp;'a str>);
+                fn exec(&'a mut self, input: Option&lt;&amp;'a str>);
+                fn finalize(&'a mut self);
+                fn poll(&'a mut self, c: Context&lt;'a>)
+                    -> PollCtx&lt;'a>, Error>;
+            }
 
+        h2#CpsTask CpsTask
+        code.
+            pub struct CpsTask&lt;'a> {
+                interpreter: Interpreter&lt;'a>,
+                ast: Option&lt;&amp;'a AST&lt;'a>>,
+            }
