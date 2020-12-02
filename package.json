@@ -8,9 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
-  "type": "git",
-  "url": "http://platform.rs"
-   },
+    "type": "git",
+    "url": "http://platform.rs"
+  },
   "author": "Maxim Sokhatsky",
   "license": "ISC",
   "preinstall": "npm i -g node-sass && npm i -g pug-cli"
